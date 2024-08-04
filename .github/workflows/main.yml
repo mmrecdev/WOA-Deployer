@@ -54,7 +54,6 @@ jobs:
         git rev-list --no-merges HEAD..superjmn/${{ github.event.inputs.custom_branch || 'main' }} | while read commit; do
           git cherry-pick --strategy=recursive -X theirs $commit || true
         done
-        git push origin ${{ github.event.inputs.custom_branch || 'main' }} ${{ github.event.inputs.force_push && '--force' || '' }}
 
     - name: Upstream SuperJMN Deployer with WOA-Deployer
       run: |
@@ -64,7 +63,6 @@ jobs:
         git rev-list --no-merges HEAD..woa/${{ github.event.inputs.custom_branch || 'main' }} | while read commit; do
           git cherry-pick --strategy=recursive -X theirs $commit || true
         done
-        git push origin ${{ github.event.inputs.custom_branch || 'main' }} ${{ github.event.inputs.force_push && '--force' || '' }}
 
     - name: Zip Repositories
       run: |
@@ -88,7 +86,7 @@ jobs:
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: "Upstreaming completed successfully! Branch: ${{ github.event.inputs.custom_branch || 'main' }}, Force push: ${{ github.event.inputs.force_push }}"
+            body: "Upstreaming completed successfully! Branch: ${{ github.event.inputs.custom_branch || 'main' }}"
           })
 
     - name: Notify Failure
@@ -100,5 +98,5 @@ jobs:
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: "Upstreaming failed. Please check the logs for details. Branch: ${{ github.event.inputs.custom_branch || 'main' }}, Force push: ${{ github.event.inputs.force_push }}"
+            body: "Upstreaming failed. Please check the logs for details. Branch: ${{ github.event.inputs.custom_branch || 'main' }}"
           })
