@@ -24,43 +24,42 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout WOA-Deployer
-      uses: actions/checkout@v2
-      with:
-        repository: mmrecdev/WOA-Deployer
-        path: WOA-Deployer
-        fetch-depth: 0
+    - name: Create Working Directories
+      run: |
+        mkdir WOA-Deployer
+        mkdir SuperJMN-Deployer
 
-    - name: Checkout SuperJMN Deployer
-      uses: actions/checkout@v2
-      with:
-        repository: SuperJMN/Deployer
-        path: SuperJMN-Deployer
-        fetch-depth: 0
+    - name: Clone WOA-Deployer
+      run: |
+        git clone https://github.com/mmrecdev/WOA-Deployer.git WOA-Deployer
+        cd WOA-Deployer
+        git checkout ${{ github.event.inputs.custom_branch || 'main' }}
+
+    - name: Clone SuperJMN Deployer
+      run: |
+        git clone https://github.com/SuperJMN/Deployer.git SuperJMN-Deployer
+        cd SuperJMN-Deployer
+        git checkout ${{ github.event.inputs.custom_branch || 'main' }}
 
     - name: Set Git Config
       run: |
         git config --global user.name github-actions
         git config --global user.email github-actions@github.com
 
-    - name: Upstream WOA-Deployer
+    - name: Upstream WOA-Deployer with SuperJMN Deployer
       run: |
         cd WOA-Deployer
-        git remote add upstream https://github.com/mmrecdev/WOA-Deployer.git
-        git fetch upstream
-        git checkout ${{ github.event.inputs.custom_branch || 'main' }}
-        git merge -X theirs --no-commit --no-ff upstream/${{ github.event.inputs.custom_branch || 'main' }}
-        git commit -m "Merge upstream changes" || echo "No changes to commit"
+        git remote add superjmn ../SuperJMN-Deployer
+        git fetch superjmn
+        git cherry-pick --strategy=recursive -X theirs $(git rev-list --no-merges HEAD..superjmn/${{ github.event.inputs.custom_branch || 'main' }})
         git push origin ${{ github.event.inputs.custom_branch || 'main' }} ${{ github.event.inputs.force_push && '--force' || '' }}
 
-    - name: Upstream SuperJMN Deployer
+    - name: Upstream SuperJMN Deployer with WOA-Deployer
       run: |
         cd SuperJMN-Deployer
-        git remote add upstream https://github.com/SuperJMN/Deployer.git
-        git fetch upstream
-        git checkout ${{ github.event.inputs.custom_branch || 'main' }}
-        git merge -X theirs --no-commit --no-ff upstream/${{ github.event.inputs.custom_branch || 'main' }}
-        git commit -m "Merge upstream changes" || echo "No changes to commit"
+        git remote add woa ../WOA-Deployer
+        git fetch woa
+        git cherry-pick --strategy=recursive -X theirs $(git rev-list --no-merges HEAD..woa/${{ github.event.inputs.custom_branch || 'main' }})
         git push origin ${{ github.event.inputs.custom_branch || 'main' }} ${{ github.event.inputs.force_push && '--force' || '' }}
 
     - name: Zip Repositories
