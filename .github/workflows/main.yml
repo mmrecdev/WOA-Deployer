@@ -51,7 +51,9 @@ jobs:
         cd WOA-Deployer
         git remote add superjmn ../SuperJMN-Deployer
         git fetch superjmn
-        git cherry-pick --strategy=recursive -X theirs $(git rev-list --no-merges HEAD..superjmn/${{ github.event.inputs.custom_branch || 'main' }})
+        git rev-list --no-merges HEAD..superjmn/${{ github.event.inputs.custom_branch || 'main' }} | while read commit; do
+          git cherry-pick --strategy=recursive -X theirs $commit || true
+        done
         git push origin ${{ github.event.inputs.custom_branch || 'main' }} ${{ github.event.inputs.force_push && '--force' || '' }}
 
     - name: Upstream SuperJMN Deployer with WOA-Deployer
@@ -59,7 +61,9 @@ jobs:
         cd SuperJMN-Deployer
         git remote add woa ../WOA-Deployer
         git fetch woa
-        git cherry-pick --strategy=recursive -X theirs $(git rev-list --no-merges HEAD..woa/${{ github.event.inputs.custom_branch || 'main' }})
+        git rev-list --no-merges HEAD..woa/${{ github.event.inputs.custom_branch || 'main' }} | while read commit; do
+          git cherry-pick --strategy=recursive -X theirs $commit || true
+        done
         git push origin ${{ github.event.inputs.custom_branch || 'main' }} ${{ github.event.inputs.force_push && '--force' || '' }}
 
     - name: Zip Repositories
