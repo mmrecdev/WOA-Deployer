@@ -1,0 +1,81 @@
+name: WOA-Deployer with SuperJMN Deployer
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout WOA-Deployer
+      uses: actions/checkout@v2
+      with:
+        repository: mmrecdev/WOA-Deployer
+        path: WOA-Deployer
+
+    - name: Checkout SuperJMN Deployer
+      uses: actions/checkout@v2
+      with:
+        repository: SuperJMN/Deployer
+        path: SuperJMN-Deployer
+
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: '6.0.x'
+
+    - name: Install NuGet dependencies
+      run: dotnet restore WOA-Deployer/WOA-Deployer.sln
+
+    - name: Build WOA-Deployer
+      run: dotnet build WOA-Deployer/WOA-Deployer.sln --configuration Release
+
+    - name: Install NuGet dependencies for SuperJMN Deployer
+      run: dotnet restore SuperJMN-Deployer/Deployer.sln
+
+    - name: Build SuperJMN Deployer
+      run: dotnet build SuperJMN-Deployer/Deployer.sln --configuration Release
+
+    - name: Run WOA-Deployer
+      run: |
+        cd WOA-Deployer/bin/Release/net6.0
+        ./WOA-Deployer.exe --some-arguments
+
+    - name: Run SuperJMN Deployer
+      run: |
+        cd SuperJMN-Deployer/bin/Release/net6.0
+        ./Deployer.exe --some-arguments
+
+    - name: Archive Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: deployment-artifacts
+        path: |
+          WOA-Deployer/bin/Release/net6.0
+          SuperJMN-Deployer/bin/Release/net6.0
+
+    - name: Notify Success
+      if: success()
+      uses: actions/github-script@v4
+      with:
+        script: |
+          github.issues.createComment({
+            issue_number: context.issue.number,
+            body: "Deployment completed successfully!"
+          })
+
+    - name: Notify Failure
+      if: failure()
+      uses: actions/github-script@v4
+      with:
+        script: |
+          github.issues.createComment({
+            issue_number: context.issue.number,
+            body: "Deployment failed. Please check the logs for details."
+          })
