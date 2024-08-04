@@ -46,7 +46,7 @@ jobs:
     - name: Upstream WOA-Deployer
       run: |
         cd WOA-Deployer
-        git remote add upstream https://github.com/original-woa-deployer-repo/WOA-Deployer.git
+        git remote add upstream https://github.com/mmrecdev/WOA-Deployer
         git fetch upstream
         git checkout ${{ github.event.inputs.custom_branch || 'main' }}
         git merge upstream/${{ github.event.inputs.custom_branch || 'main' }} --allow-unrelated-histories
