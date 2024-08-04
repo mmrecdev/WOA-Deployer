@@ -7,6 +7,17 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      custom_branch:
+        description: 'Custom branch to upstream'
+        required: false
+        default: 'main'
+      force_push:
+        description: 'Force push to origin'
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   upstream-and-save:
@@ -18,32 +29,37 @@ jobs:
       with:
         repository: mmrecdev/WOA-Deployer
         path: WOA-Deployer
+        fetch-depth: 0
 
     - name: Checkout SuperJMN Deployer
       uses: actions/checkout@v2
       with:
         repository: SuperJMN/Deployer
         path: SuperJMN-Deployer
+        fetch-depth: 0
+
+    - name: Set Git Config
+      run: |
+        git config --global user.name github-actions
+        git config --global user.email github-actions@github.com
 
     - name: Upstream WOA-Deployer
       run: |
         cd WOA-Deployer
-        git config user.name github-actions
-        git config user.email github-actions@github.com
         git remote add upstream https://github.com/original-woa-deployer-repo/WOA-Deployer.git
         git fetch upstream
-        git merge upstream/main --allow-unrelated-histories
-        git push origin main
+        git checkout ${{ github.event.inputs.custom_branch || 'main' }}
+        git merge upstream/${{ github.event.inputs.custom_branch || 'main' }} --allow-unrelated-histories
+        git push origin ${{ github.event.inputs.custom_branch || 'main' }} ${{ github.event.inputs.force_push && '--force' || '' }}
 
     - name: Upstream SuperJMN Deployer
       run: |
         cd SuperJMN-Deployer
-        git config user.name github-actions
-        git config user.email github-actions@github.com
         git remote add upstream https://github.com/original-superjmn-deployer-repo/Deployer.git
         git fetch upstream
-        git merge upstream/main --allow-unrelated-histories
-        git push origin main
+        git checkout ${{ github.event.inputs.custom_branch || 'main' }}
+        git merge upstream/${{ github.event.inputs.custom_branch || 'main' }} --allow-unrelated-histories
+        git push origin ${{ github.event.inputs.custom_branch || 'main' }} ${{ github.event.inputs.force_push && '--force' || '' }}
 
     - name: Archive Repositories
       uses: actions/upload-artifact@v2
@@ -60,7 +76,9 @@ jobs:
         script: |
           github.issues.createComment({
             issue_number: context.issue.number,
-            body: "Upstreaming completed successfully!"
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: "Upstreaming completed successfully! Branch: ${{ github.event.inputs.custom_branch || 'main' }}, Force push: ${{ github.event.inputs.force_push }}"
           })
 
     - name: Notify Failure
@@ -70,5 +88,7 @@ jobs:
         script: |
           github.issues.createComment({
             issue_number: context.issue.number,
-            body: "Upstreaming failed. Please check the logs for details."
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: "Upstreaming failed. Please check the logs for details. Branch: ${{ github.event.inputs.custom_branch || 'main' }}, Force push: ${{ github.event.inputs.force_push }}"
           })
