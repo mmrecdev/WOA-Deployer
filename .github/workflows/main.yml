@@ -46,19 +46,21 @@ jobs:
     - name: Upstream WOA-Deployer
       run: |
         cd WOA-Deployer
-        git remote add upstream https://github.com/mmrecdev/WOA-Deployer
+        git remote add upstream https://github.com/mmrecdev/WOA-Deployer/actions/runs/10234113321
         git fetch upstream
         git checkout ${{ github.event.inputs.custom_branch || 'main' }}
-        git merge upstream/${{ github.event.inputs.custom_branch || 'main' }} --allow-unrelated-histories
+        git merge -X theirs --no-commit --no-ff upstream/${{ github.event.inputs.custom_branch || 'main' }}
+        git commit -m "Merge upstream changes" || echo "No changes to commit"
         git push origin ${{ github.event.inputs.custom_branch || 'main' }} ${{ github.event.inputs.force_push && '--force' || '' }}
 
     - name: Upstream SuperJMN Deployer
       run: |
         cd SuperJMN-Deployer
-        git remote add upstream https://github.com/original-superjmn-deployer-repo/Deployer.git
+        git remote add upstream https://github.com/SuperJMN/Deployer
         git fetch upstream
         git checkout ${{ github.event.inputs.custom_branch || 'main' }}
-        git merge upstream/${{ github.event.inputs.custom_branch || 'main' }} --allow-unrelated-histories
+        git merge -X theirs --no-commit --no-ff upstream/${{ github.event.inputs.custom_branch || 'main' }}
+        git commit -m "Merge upstream changes" || echo "No changes to commit"
         git push origin ${{ github.event.inputs.custom_branch || 'main' }} ${{ github.event.inputs.force_push && '--force' || '' }}
 
     - name: Archive Repositories
