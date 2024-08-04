@@ -1,4 +1,4 @@
-name: WOA-Deployer with SuperJMN Deployer
+name: WOA-Deployer with SuperJMN Deployer Upstreaming
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  upstream-and-save:
     runs-on: windows-latest
 
     steps:
@@ -25,40 +25,33 @@ jobs:
         repository: SuperJMN/Deployer
         path: SuperJMN-Deployer
 
-    - name: Set up .NET
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: '6.0.x'
-
-    - name: Install NuGet dependencies
-      run: dotnet restore WOA-Deployer/WOA-Deployer.sln
-
-    - name: Build WOA-Deployer
-      run: dotnet build WOA-Deployer/WOA-Deployer.sln --configuration Release
-
-    - name: Install NuGet dependencies for SuperJMN Deployer
-      run: dotnet restore SuperJMN-Deployer/Deployer.sln
-
-    - name: Build SuperJMN Deployer
-      run: dotnet build SuperJMN-Deployer/Deployer.sln --configuration Release
-
-    - name: Run WOA-Deployer
+    - name: Upstream WOA-Deployer
       run: |
-        cd WOA-Deployer/bin/Release/net6.0
-        ./WOA-Deployer.exe --some-arguments
+        cd WOA-Deployer
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git remote add upstream https://github.com/original-woa-deployer-repo/WOA-Deployer.git
+        git fetch upstream
+        git merge upstream/main --allow-unrelated-histories
+        git push origin main
 
-    - name: Run SuperJMN Deployer
+    - name: Upstream SuperJMN Deployer
       run: |
-        cd SuperJMN-Deployer/bin/Release/net6.0
-        ./Deployer.exe --some-arguments
+        cd SuperJMN-Deployer
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git remote add upstream https://github.com/original-superjmn-deployer-repo/Deployer.git
+        git fetch upstream
+        git merge upstream/main --allow-unrelated-histories
+        git push origin main
 
-    - name: Archive Artifacts
+    - name: Archive Repositories
       uses: actions/upload-artifact@v2
       with:
-        name: deployment-artifacts
+        name: upstreamed-repositories
         path: |
-          WOA-Deployer/bin/Release/net6.0
-          SuperJMN-Deployer/bin/Release/net6.0
+          WOA-Deployer
+          SuperJMN-Deployer
 
     - name: Notify Success
       if: success()
@@ -67,7 +60,7 @@ jobs:
         script: |
           github.issues.createComment({
             issue_number: context.issue.number,
-            body: "Deployment completed successfully!"
+            body: "Upstreaming completed successfully!"
           })
 
     - name: Notify Failure
@@ -77,6 +70,5 @@ jobs:
         script: |
           github.issues.createComment({
             issue_number: context.issue.number,
-            body: "Deployment failed. Please check the logs for details."
+            body: "Upstreaming failed. Please check the logs for details."
           })
-
